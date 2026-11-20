@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>매출 대시보드 2026</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --chip: #f0efec;
+    --chip-on: #0b0b0b;
+    --chip-on-ink: #fcfcfb;
+    --neutral-bar: #52514e;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10); --chip: #2c2c2a;
+      --chip-on: #f0efec; --chip-on-ink: #1a1a19; --neutral-bar: #c3c2b7;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255, 255, 255, 0.10); --chip: #2c2c2a;
+    --chip-on: #f0efec; --chip-on-ink: #1a1a19; --neutral-bar: #c3c2b7;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 14px; line-height: 1.5;
+  }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--ink2); margin: 2px 0 0; font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card h2 { font-size: 15px; margin: 0; }
+  .card .hint { color: var(--muted); font-size: 12px; margin: 2px 0 12px; }
+
+  .filters { display: grid; gap: 10px; margin-bottom: 16px; }
+  .frow { display: flex; gap: 12px; align-items: flex-start; }
+  .flabel { flex: 0 0 40px; color: var(--ink2); font-size: 13px; padding-top: 5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--chip); color: var(--ink);
+    border-radius: 999px; padding: 4px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip:hover { border-color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-ink); border-color: var(--chip-on); }
+  .chip:focus-visible, .btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--chip); border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
+  .seg button { font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--ink2); padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--border); }
+  .btn { font: inherit; font-size: 13px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+  .btn:hover { border-color: var(--muted); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi .label { color: var(--ink2); font-size: 13px; }
+  .kpi .value { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; }
+  .kpi .note { color: var(--muted); font-size: 12px; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .span2 { grid-column: 1 / -1; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }
+  .legend button { font: inherit; font-size: 12px; color: var(--ink2); background: none; border: 0; padding: 2px 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .legend button[data-off="true"] { opacity: 0.35; }
+  .chart { width: 100%; }
+  svg { display: block; overflow: visible; }
+  svg text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  svg .lbl { fill: var(--ink2); font-size: 13px; }
+  svg .val { fill: var(--ink); font-size: 12px; }
+  .hit { fill: transparent; cursor: pointer; }
+  .hit:hover { fill: var(--ink); fill-opacity: 0.04; }
+
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--ink2); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.total td { font-weight: 650; border-bottom: 0; }
+  td .dot { display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 160px; display: none;
+  }
+  #tip .t { font-weight: 650; margin-bottom: 4px; }
+  #tip .r { display: flex; justify-content: space-between; gap: 16px; color: var(--ink2); }
+  #tip .r b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  #tip .r span { display: inline-flex; align-items: center; gap: 6px; }
+
+  footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
+
+  @media (max-width: 760px) {
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .kpi .value { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>매출 대시보드 2026</h1>
+      <p class="sub">2026년 1–10월 · 제품 5종 · 채널 4곳 · 원본: [교육용 더미] 매출 데이터 2026 (Google Sheets)</p>
+    </div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="지표">
+        <button type="button" data-metric="rev" aria-pressed="true">매출</button>
+        <button type="button" data-metric="qty" aria-pressed="false">판매수량</button>
+      </div>
+      <button type="button" class="btn" id="reset">필터 초기화</button>
+    </div>
+  </header>
+
+  <section class="card filters" aria-label="필터">
+    <div class="frow"><div class="flabel">월</div><div class="chips" id="f-m"></div></div>
+    <div class="frow"><div class="flabel">제품</div><div class="chips" id="f-p"></div></div>
+    <div class="frow"><div class="flabel">채널</div><div class="chips" id="f-c"></div></div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid">
+    <div class="card span2">
+      <h2 id="t-month">월별 매출</h2>
+      <p class="hint">막대를 클릭하면 해당 월만 선택돼요. 여러 개를 고를 수 있고, 다시 클릭하면 해제돼요.</p>
+      <div class="legend" id="legend"></div>
+      <div class="chart" id="c-month"></div>
+    </div>
+    <div class="card">
+      <h2 id="t-prod">제품별 매출</h2>
+      <p class="hint">클릭해서 제품을 선택하세요.</p>
+      <div class="chart" id="c-prod"></div>
+    </div>
+    <div class="card">
+      <h2 id="t-chan">채널별 매출</h2>
+      <p class="hint">클릭해서 채널을 선택하세요.</p>
+      <div class="chart" id="c-chan"></div>
+    </div>
+    <div class="card span2">
+      <h2 id="t-table">제품 × 채널 매출</h2>
+      <p class="hint" id="unit">단위: 만원 · 현재 필터 적용</p>
+      <div class="tablewrap" id="tbl"></div>
+    </div>
+  </section>
+
+  <footer>각 차트는 다른 차트의 선택을 반영하고, 자기 축에서 선택한 항목은 강조해서 보여줘요. 매출 = 판매수량 × 정가 × (1 − 할인율).</footer>
+</main>
+<div id="tip" role="tooltip"></div>
+
+<script>
+// ---- 데이터 (Google Sheets "[교육용 더미] 매출 데이터 2026" 시트에서 옮김) ----
+const MONTHS = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'];
+const PRODUCTS = [
+  { name: '데일리 선크림', price: 19000 },
+  { name: '진정 시카 앰플', price: 24000 },
+  { name: '수분 장벽 크림', price: 28000 },
+  { name: '에센셜 마스크팩(10매)', price: 15000 },
+  { name: '약산성 클렌징폼', price: 12000 },
+];
+const CHANNELS = ['올리브영', '자사몰', '쿠팡', '아마존(해외)'];
+// 월별로 [제품1(올리브영,자사몰,쿠팡,아마존), 제품2(...), ...] 순서
+const QTY = [
+  [439,209,330,237, 600,300,487,404, 587,323,502,351, 795,324,521,422, 746,369,497,371],
+  [566,242,365,305, 595,318,456,388, 650,267,426,439, 921,394,627,537, 715,371,528,481],
+  [741,405,496,578, 664,292,373,342, 506,246,314,303, 844,391,546,595, 733,308,425,389],
+  [968,554,710,835, 680,261,503,396, 406,204,260,235, 737,415,591,489, 691,347,513,466],
+  [1416,590,958,1103, 662,308,422,434, 328,121,221,247, 751,396,594,552, 747,348,480,587],
+  [1812,647,1025,1108, 520,281,386,473, 307,117,170,189, 905,329,642,595, 718,279,520,584],
+  [1657,874,1148,1216, 623,323,395,546, 310,139,200,191, 878,391,634,623, 668,353,501,627],
+  [1506,771,1230,1333, 670,296,505,486, 309,135,210,222, 964,455,651,734, 829,314,505,608],
+  [1133,424,672,791, 637,235,466,451, 425,200,345,369, 888,307,638,768, 739,354,537,616],
+  [773,317,541,668, 573,321,376,536, 655,277,432,436, 776,376,528,675, 772,340,530,558],
+];
+const DISC = [
+  [20,10,20,0, 0,10,0,5, 0,0,0,15, 5,5,20,5, 0,10,10,0],
+  [10,10,0,0, 0,0,15,0, 0,10,20,10, 20,5,10,0, 20,0,10,0],
+  [0,10,15,10, 20,5,0,5, 5,0,20,15, 15,0,0,20, 5,10,20,0],
+  [20,0,5,20, 10,5,5,5, 0,10,0,0, 10,0,0,15, 20,0,20,15],
+  [15,10,5,5, 20,5,20,10, 10,5,0,5, 20,0,20,0, 10,10,10,10],
+  [20,5,5,5, 20,5,20,15, 5,10,10,5, 5,10,0,15, 0,10,15,10],
+  [15,10,10,15, 0,0,20,10, 15,5,0,0, 10,5,0,20, 15,0,15,15],
+  [15,10,10,0, 15,5,15,20, 0,10,0,10, 15,5,10,0, 0,0,20,0],
+  [0,0,10,0, 15,0,20,0, 10,5,0,0, 10,5,0,0, 10,10,10,0],
+  [5,5,0,10, 0,5,0,0, 0,10,10,15, 10,5,20,0, 20,10,10,15],
+];
+const ROWS = [];
+MONTHS.forEach((_, m) => {
+  for (let p = 0; p < PRODUCTS.length; p++) for (let c = 0; c < CHANNELS.length; c++) {
+    const k = p * 4 + c, q = QTY[m][k], d = DISC[m][k], list = q * PRODUCTS[p].price;
+    ROWS.push({ m, p, c, q, d, list, rev: Math.round(list * (100 - d) / 100) });
+  }
+});
+
+// ---- 상태 ----
+const state = { m: new Set(), p: new Set(), c: new Set(), metric: 'rev' };
+const COLORS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
+const monthLabel = i => (i + 1) + '월';
+const LABELS = { m: MONTHS.map((_, i) => monthLabel(i)), p: PRODUCTS.map(x => x.name), c: CHANNELS };
+
+const pass = (r, except) => {
+  for (const k of ['m', 'p', 'c']) if (k !== except && state[k].size && !state[k].has(r[k])) return false;
+  return true;
+};
+const val = r => state.metric === 'rev' ? r.rev : r.q;
+const sum = (rows, f = val) => rows.reduce((s, r) => s + f(r), 0);
+const isOn = (dim, i) => !state[dim].size || state[dim].has(i);
+
+// ---- 포맷 ----
+const num = n => Math.round(n).toLocaleString('ko-KR');
+function short(n) {
+  if (state.metric === 'qty') return num(n) + '개';
+  if (n >= 1e8) return String(parseFloat((n / 1e8).toFixed(2))) + '억';
+  if (n >= 1e4) return num(n / 1e4) + '만';
+  return num(n);
+}
+const full = n => state.metric === 'rev' ? num(n) + '원' : num(n) + '개';
+const pct = x => (x * 100).toFixed(1) + '%';
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+
+// ---- SVG 헬퍼 ----
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function topRound(x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h));
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+function rightRound(x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w, h / 2));
+  return `M${x},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h - r}Q${x + w},${y + h} ${x + w - r},${y + h}H${x}Z`;
+}
+function niceTicks(max) {
+  const raw = max / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  const top = Math.ceil(max / step) * step, ticks = [];
+  for (let v = 0; v <= top + step / 2; v += step) ticks.push(v);
+  return { top, ticks };
+}
+
+// ---- 툴팁 ----
+const tip = document.getElementById('tip');
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.style.display = 'block';
+  const pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+const hideTip = () => { tip.style.display = 'none'; };
+const tipRow = (label, value, color) =>
+  `<div class="r"><span>${color ? `<i class="dot" style="background:${color}"></i>` : ''}${esc(label)}</span><b>${value}</b></div>`;
+function bindHit(node, html, onClick) {
+  node.addEventListener('pointermove', ev => showTip(ev, html()));
+  node.addEventListener('pointerleave', hideTip);
+  node.addEventListener('click', () => { hideTip(); onClick(); });
+}
+
+function toggle(dim, i) {
+  state[dim].has(i) ? state[dim].delete(i) : state[dim].add(i);
+  if (state[dim].size === LABELS[dim].length) state[dim].clear();
+  render();
+}
+
+// ---- 필터 칩 ----
+function renderChips() {
+  for (const dim of ['m', 'p', 'c']) {
+    const box = document.getElementById('f-' + dim);
+    box.innerHTML = '';
+    const all = document.createElement('button');
+    all.type = 'button'; all.className = 'chip'; all.textContent = '전체';
+    all.setAttribute('aria-pressed', String(!state[dim].size));
+    all.onclick = () => { state[dim].clear(); render(); };
+    box.appendChild(all);
+    LABELS[dim].forEach((label, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip';
+      b.setAttribute('aria-pressed', String(state[dim].has(i)));
+      b.innerHTML = (dim === 'p' ? `<i class="dot" style="background:${COLORS[i]}"></i>` : '') + esc(label);
+      b.onclick = () => toggle(dim, i);
+      box.appendChild(b);
+    });
+  }
+}
+
+// ---- KPI ----
+function renderKpis() {
+  const rows = ROWS.filter(r => pass(r));
+  const rev = sum(rows, r => r.rev), qty = sum(rows, r => r.q), list = sum(rows, r => r.list);
+  const nm = state.m.size || MONTHS.length, np = state.p.size || PRODUCTS.length, nc = state.c.size || CHANNELS.length;
+  const items = [
+    ['총 매출', rev >= 1e8 ? String(parseFloat((rev / 1e8).toFixed(2))) + '억원' : num(rev / 1e4) + '만원', num(rev) + '원'],
+    ['판매수량', num(qty) + '개', `월평균 ${num(qty / nm)}개`],
+    ['평균 판매가', qty ? num(rev / qty) + '원' : '–', '할인 반영 후 개당 매출'],
+    ['평균 할인율', list ? pct(1 - rev / list) : '–', `정가 기준 ${list >= 1e8 ? String(parseFloat((list / 1e8).toFixed(2))) + '억원' : num(list / 1e4) + '만원'}`],
+  ];
+  document.getElementById('kpis').innerHTML = items.map(([l, v, n]) =>
+    `<div class="card kpi"><div class="label">${l}</div><div class="value">${v}</div><div class="note">${n}</div></div>`).join('') ;
+  document.getElementById('kpis').setAttribute('aria-label', `선택 범위: ${nm}개월, 제품 ${np}종, 채널 ${nc}곳`);
+}
+
+// ---- 월별 누적 막대 ----
+function renderMonthly() {
+  const box = document.getElementById('c-month');
+  const W = box.clientWidth, H = 300, ml = 56, mr = 4, mt = 18, mb = 28, ph = H - mt - mb;
+  const rows = ROWS.filter(r => pass(r, 'm'));
+  const prods = PRODUCTS.map((_, i) => i).filter(i => isOn('p', i));
+  const data = MONTHS.map((_, m) => {
+    const by = prods.map(p => sum(rows.filter(r => r.m === m && r.p === p)));
+    return { m, by, total: by.reduce((a, b) => a + b, 0) };
+  });
+  const { top, ticks } = niceTicks(Math.max(1, ...data.map(d => d.total)));
+  const y = v => mt + ph * (1 - v / top);
+  const band = (W - ml - mr) / MONTHS.length, bw = Math.min(48, band * 0.62);
+  const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '월별 제품 누적 막대 차트' });
+  ticks.forEach(t => {
+    el('line', { x1: ml, x2: W - mr, y1: y(t), y2: y(t), stroke: t ? 'var(--grid)' : 'var(--axis)', 'stroke-width': 1 }, svg);
+    el('text', { x: ml - 8, y: y(t) + 4, 'text-anchor': 'end' }, svg).textContent = short(t);
+  });
+  data.forEach(d => {
+    const x = ml + band * d.m + (band - bw) / 2;
+    const g = el('g', { opacity: isOn('m', d.m) ? 1 : 0.3 }, svg);
+    let cur = y(0);
+    const lastIdx = d.by.reduce((li, v, k) => v > 0 ? k : li, -1);
+    d.by.forEach((v, k) => {
+      if (v <= 0) return;
+      const h = ph * v / top, isTop = k === lastIdx, gap = isTop ? 0 : 2;
+      const sh = Math.max(0.5, h - gap), sy = cur - h + gap;
+      el('path', { d: isTop ? topRound(x, sy, bw, sh, 4) : `M${x},${sy}h${bw}v${sh}h${-bw}Z`, fill: COLORS[prods[k]] }, g);
+      cur -= h;
+    });
+    if (band >= 46 && d.total > 0) el('text', { x: x + bw / 2, y: y(d.total) - 6, 'text-anchor': 'middle', class: 'val' }, g).textContent = short(d.total);
+    el('text', { x: x + bw / 2, y: H - 8, 'text-anchor': 'middle' }, svg).textContent = monthLabel(d.m);
+    const hit = el('rect', { x: ml + band * d.m, y: mt, width: band, height: ph, class: 'hit' }, svg);
+    bindHit(hit, () => `<div class="t">${monthLabel(d.m)} · ${full(d.total)}</div>` +
+      prods.map((p, k) => tipRow(PRODUCTS[p].name, short(d.by[k]), COLORS[p])).reverse().join(''),
+      () => toggle('m', d.m));
+  });
+  box.replaceChildren(svg);
+
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  PRODUCTS.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.off = String(!isOn('p', i));
+    b.innerHTML = `<i class="dot" style="background:${COLORS[i]}"></i>${esc(p.name)}`;
+    b.title = '클릭해서 제품 선택';
+    b.onclick = () => toggle('p', i);
+    legend.appendChild(b);
+  });
+}
+
+// ---- 가로 막대 (제품/채널) ----
+function renderHBars(boxId, dim, colorOf) {
+  const box = document.getElementById(boxId);
+  const rows = ROWS.filter(r => pass(r, dim));
+  const items = LABELS[dim].map((label, i) => {
+    const rs = rows.filter(r => r[dim] === i);
+    return { i, label, v: sum(rs), rev: sum(rs, r => r.rev), q: sum(rs, r => r.q), list: sum(rs, r => r.list) };
+  });
+  const total = items.reduce((s, d) => s + d.v, 0) || 1;
+  const max = Math.max(1, ...items.map(d => d.v));
+  const W = box.clientWidth, rowH = 54, valW = 120, H = items.length * rowH;
+  const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': (dim === 'p' ? '제품' : '채널') + '별 가로 막대 차트' });
+  items.forEach((d, n) => {
+    const y0 = n * rowH, g = el('g', { opacity: isOn(dim, d.i) ? 1 : 0.3 }, svg);
+    el('text', { x: 0, y: y0 + 16, class: 'lbl' }, g).textContent = d.label;
+    const bw = Math.max(d.v > 0 ? 2 : 0, (W - valW) * d.v / max);
+    if (bw > 0) el('path', { d: rightRound(0, y0 + 24, bw, 16, 4), fill: colorOf(d.i) }, g);
+    el('text', { x: bw + 8, y: y0 + 36, class: 'val' }, g).textContent = `${short(d.v)} · ${pct(d.v / total)}`;
+    const hit = el('rect', { x: 0, y: y0, width: W, height: rowH, class: 'hit' }, svg);
+    bindHit(hit, () => `<div class="t">${esc(d.label)}</div>` +
+      tipRow('매출', num(d.rev) + '원') + tipRow('판매수량', num(d.q) + '개') +
+      tipRow('평균 할인율', d.list ? pct(1 - d.rev / d.list) : '–') + tipRow('비중', pct(d.v / total)),
+      () => toggle(dim, d.i));
+  });
+  box.replaceChildren(svg);
+}
+
+// ---- 표 ----
+function renderTable() {
+  const rows = ROWS.filter(r => pass(r));
+  const ps = PRODUCTS.map((_, i) => i).filter(i => isOn('p', i));
+  const cs = CHANNELS.map((_, i) => i).filter(i => isOn('c', i));
+  const cell = v => state.metric === 'rev' ? num(v / 1e4) : num(v);
+  let html = '<table><thead><tr><th>제품</th>' + cs.map(c => `<th>${esc(CHANNELS[c])}</th>`).join('') + '<th>합계</th></tr></thead><tbody>';
+  ps.forEach(p => {
+    const vs = cs.map(c => sum(rows.filter(r => r.p === p && r.c === c)));
+    html += `<tr><td><i class="dot" style="background:${COLORS[p]}"></i>${esc(PRODUCTS[p].name)}</td>` +
+      vs.map(v => `<td>${cell(v)}</td>`).join('') + `<td><b>${cell(vs.reduce((a, b) => a + b, 0))}</b></td></tr>`;
+  });
+  const tots = cs.map(c => sum(rows.filter(r => r.c === c)));
+  html += '<tr class="total"><td>합계</td>' + tots.map(v => `<td>${cell(v)}</td>`).join('') +
+    `<td>${cell(tots.reduce((a, b) => a + b, 0))}</td></tr></tbody></table>`;
+  document.getElementById('tbl').innerHTML = html;
+  document.getElementById('unit').textContent = (state.metric === 'rev' ? '단위: 만원' : '단위: 개') + ' · 현재 필터 적용';
+}
+
+function render() {
+  const word = state.metric === 'rev' ? '매출' : '판매수량';
+  document.getElementById('t-month').textContent = `월별 ${word}`;
+  document.getElementById('t-prod').textContent = `제품별 ${word}`;
+  document.getElementById('t-chan').textContent = `채널별 ${word}`;
+  document.getElementById('t-table').textContent = `제품 × 채널 ${word}`;
+  document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === state.metric)));
+  renderChips();
+  renderKpis();
+  renderMonthly();
+  renderHBars('c-prod', 'p', i => COLORS[i]);
+  renderHBars('c-chan', 'c', () => 'var(--neutral-bar)');
+  renderTable();
+}
+
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => { state.metric = b.dataset.metric; render(); });
+document.getElementById('reset').onclick = () => { state.m.clear(); state.p.clear(); state.c.clear(); render(); };
+let raf = 0;
+new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }).observe(document.querySelector('main'));
+render();
+</script>
+</body>
+</html>
